@@ -19,9 +19,10 @@
       </ThreadGroup>
       <hashTree>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Request">
-          <stringProp name="HTTPSampler.domain">httpbin.org</stringProp>
-          <stringProp name="HTTPSampler.protocol">https</stringProp>
-          <stringProp name="HTTPSampler.path">/get</stringProp>
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">5000</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.path">/fast</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
