@@ -5,6 +5,7 @@ import subprocess
 import os
 import shutil
 from parser import parse_jmeter_results
+from incidents import analyze_incident
 
 app = Flask(__name__)
 
@@ -100,15 +101,23 @@ def home():
 def start_test():
 
     jmeter_command = [
-        "jmeter",
-        "-n",
-        "-t",
-        "/app/jmeter/testplans/basic_load_test.jmx",
-        "-l",
-        "/app/jmeter/results/results.jtl",
-        "-e",
-        "-o",
-        "/app/jmeter/reports/html_report"
+    "jmeter",
+    "-n",
+    "-t",
+    "/app/jmeter/testplans/basic_load_test.jmx",
+
+    "-Jusers=100",
+    "-Jrampup=10",
+    "-Jhost=localhost",
+    "-Jport=5000",
+    "-Jpath=/fast",
+
+    "-l",
+    "/app/jmeter/results/results.jtl",
+
+    "-e",
+    "-o",
+    "/app/jmeter/reports/html_report"
     ]
 
     report_path = "/app/jmeter/reports/html_report"
@@ -128,10 +137,13 @@ def start_test():
             "/app/jmeter/results/results.jtl"
         )
 
+        incidents = analyze_incident(results)
+
         return {
             "status": "success",
             "message": "JMeter test completed",
-            "results": results
+            "results": results,
+            "incidents": incidents
         }
 
     except subprocess.CalledProcessError as e:

@@ -1,0 +1,37 @@
+def analyze_incident(results):
+
+    incidents = []
+
+    error_percentage = results["error_percentage"]
+    p95_latency = results["p95_latency_ms"]
+    throughput = results["throughput_rps"]
+
+    if error_percentage > 10:
+        incidents.append({
+            "severity": "critical",
+            "type": "High Error Rate",
+            "message": f"Error rate reached {error_percentage}%"
+        })
+
+    if p95_latency > 1000:
+        incidents.append({
+            "severity": "warning",
+            "type": "High Latency",
+            "message": f"P95 latency is {p95_latency} ms"
+        })
+
+    if throughput < 20:
+        incidents.append({
+            "severity": "warning",
+            "type": "Low Throughput",
+            "message": f"Throughput dropped to {throughput} requests/sec"
+        })
+
+    if not incidents:
+        incidents.append({
+            "severity": "info",
+            "type": "Healthy System",
+            "message": "No major incidents detected"
+        })
+
+    return incidents
