@@ -36,6 +36,9 @@ services:
     container_name: backend
     ports:
       - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - ./jmeter:/app/jmeter
   
 volumes:
   grafana_data:

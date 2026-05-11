@@ -4,12 +4,13 @@ __pycache__/
 venv/
 .venv/
 
-# JMeter Results
-*.jtl
-results/
+# JMeter generated files
+jmeter/results/
+jmeter/reports/
 
 # Logs
 logs/
+*.log
 
 # IDE
 .idea/
@@ -18,6 +19,3 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
-
-# Docker
-*.log
