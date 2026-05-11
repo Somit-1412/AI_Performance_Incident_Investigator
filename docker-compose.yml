@@ -5,7 +5,7 @@ services:
     container_name: prometheus
     ports:
       - "9090:9090"
-      
+
     volumes:
     - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
@@ -14,9 +14,30 @@ services:
     container_name: grafana
     ports:
       - "3000:3000"
+    volumes:
+    - grafana_data:/var/lib/grafana
 
   node_exporter:
     image: prom/node-exporter
     container_name: node_exporter
     ports:
       - "9100:9100"
+
+  influxdb:
+    image: influxdb:1.8
+    container_name: influxdb
+    ports:
+      - "8087:8086"
+    volumes:
+    - influxdb_data:/var/lib/influxdb
+  
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "5000:5000"
+  
+volumes:
+  grafana_data:
+  influxdb_data:
+
