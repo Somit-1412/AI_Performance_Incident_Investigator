@@ -5,6 +5,8 @@ venv/
 .venv/
 .env
 
+*.csv
+
 # JMeter generated files
 jmeter/results/
 jmeter/reports/

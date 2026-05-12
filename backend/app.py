@@ -1,5 +1,5 @@
 from flask import Flask, Response, request, render_template
-from prometheus_client import Counter, generate_latest, Histogram
+from prometheus_client import Counter, generate_latest, Histogram, Gauge
 import time
 import subprocess
 import os
@@ -33,6 +33,26 @@ ERROR_COUNT = Counter(
     "app_errors_total",
     "Total App Errors",
     ["method", "endpoint"]
+)
+
+TEST_AVG_LATENCY = Gauge(
+    "load_test_avg_latency_ms",
+    "Average latency of latest load test"
+)
+
+TEST_ERROR_PERCENTAGE = Gauge(
+    "load_test_error_percentage",
+    "Error percentage of latest load test"
+)
+
+TEST_THROUGHPUT = Gauge(
+    "load_test_throughput_rps",
+    "Throughput of latest load test"
+)
+
+TEST_TOTAL_REQUESTS = Gauge(
+    "load_test_total_requests",
+    "Total requests in latest load test"
 )
 
 @app.route("/fast")
@@ -157,11 +177,15 @@ def start_test():
         for endpoint in journey_endpoints.splitlines()
         if endpoint.strip()
     ]
-
-    path1 = journey_list[0] if len(journey_list) > 0 else path
-    path2 = journey_list[1] if len(journey_list) > 1 else path
-    path3 = journey_list[2] if len(journey_list) > 2 else path
-    path4 = journey_list[3] if len(journey_list) > 3 else path
+    
+    if journey_list:
+        path1 = journey_list[0] if len(journey_list) > 0 else "NONE"
+        path2 = journey_list[1] if len(journey_list) > 1 else "NONE"
+        path3 = journey_list[2] if len(journey_list) > 2 else "NONE"
+    else:
+        path1 = path
+        path2 = "NONE"
+        path3 = "NONE"
 
     jmeter_command = [
     "jmeter",
@@ -181,7 +205,6 @@ def start_test():
     "-Jpath1=" + path1,
     "-Jpath2=" + path2,
     "-Jpath3=" + path3,
-    "-Jpath4=" + path4,
 
     "-l",
     "/app/jmeter/results/results.jtl",
@@ -206,6 +229,22 @@ def start_test():
 
         results = parse_jmeter_results(
             "/app/jmeter/results/results.jtl"
+        )
+
+        TEST_AVG_LATENCY.set(
+            results["average_latency_ms"]
+        )
+
+        TEST_ERROR_PERCENTAGE.set(
+            results["error_percentage"]
+        )
+
+        TEST_THROUGHPUT.set(
+            results["throughput_rps"]
+        )
+
+        TEST_TOTAL_REQUESTS.set(
+            results["total_requests"]
         )
 
         test_context = {
