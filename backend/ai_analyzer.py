@@ -29,7 +29,13 @@ Base conclusions strictly on:
 - CPU usage
 - memory usage
 - incident data
+- endpoint-specific metrics
 - target endpoint behavior
+
+Use endpoint metrics to identify:
+- which endpoint is causing latency
+- which endpoint is causing failures
+- which endpoints are healthy
 
 If evidence is insufficient, explicitly say:
 "Root cause cannot be determined conclusively from available metrics."
@@ -50,7 +56,7 @@ System Metrics:
 - Memory Usage: {system_metrics['memory_usage_percent']}%
 
 Test Context:
-- Target Endpoint: {test_context['path']}
+- Primary Endpoint: {test_context['path']}
 - Virtual Users: {test_context['users']}
 - Ramp-Up: {test_context['rampup']} seconds
 - Loop Count: {test_context['loops']}
@@ -64,6 +70,12 @@ Detected Incidents:
 - Severity: {incident['severity']}
   Type: {incident['type']}
   Message: {incident['message']}
+"""
+        
+    prompt += f"""
+
+Endpoint Metrics:
+{results.get('endpoint_metrics', {})}
 """
 
     prompt += """
