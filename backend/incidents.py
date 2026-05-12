@@ -1,10 +1,11 @@
-def analyze_incident(results):
+def analyze_incident(results, test_context):
 
     incidents = []
 
     error_percentage = results["error_percentage"]
     p95_latency = results["p95_latency_ms"]
     throughput = results["throughput_rps"]
+    users = int(test_context["users"])
 
     if error_percentage > 10:
         incidents.append({
@@ -20,7 +21,7 @@ def analyze_incident(results):
             "message": f"P95 latency is {p95_latency} ms"
         })
 
-    if throughput < 20:
+    if users > 50 and throughput < (users * 0.5):
         incidents.append({
             "severity": "warning",
             "type": "Low Throughput",

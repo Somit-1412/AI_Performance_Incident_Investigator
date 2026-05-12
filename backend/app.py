@@ -1,4 +1,4 @@
-from flask import Flask, Response
+from flask import Flask, Response, request, render_template
 from prometheus_client import Counter, generate_latest, Histogram
 import time
 import subprocess
@@ -6,6 +6,12 @@ import os
 import shutil
 from parser import parse_jmeter_results
 from incidents import analyze_incident
+from dotenv import load_dotenv
+from ai_analyzer import generate_ai_analysis
+from prometheus_metrics import get_system_metrics
+from urllib.parse import urlparse
+
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -93,12 +99,44 @@ def cpu():
 @app.route("/")
 def home():
     REQUEST_COUNT.labels(method="GET", endpoint="/").inc()
-    return {
-        "message": "AI Performance Incident Investigator Backend Running"
-    }
+    
+    return render_template("index.html")
+
 
 @app.route("/start-test")
 def start_test():
+
+    base_url = request.args.get(
+    "baseUrl",
+    "http://localhost:5000"
+    )
+
+    parsed_url = urlparse(base_url)
+
+    protocol = parsed_url.scheme
+    host = parsed_url.hostname or "localhost"
+
+    port = (
+        parsed_url.port
+        or (443 if protocol == "https" else 80)
+    )
+
+    path = request.args.get(
+    "path",
+    "/fast"
+    )
+    
+    users = request.args.get(
+    "users",
+    "100"
+    )
+
+    rampup = request.args.get(
+    "rampup",
+    "10"
+    )
+
+    loops = request.args.get("loops", "5")
 
     jmeter_command = [
     "jmeter",
@@ -106,11 +144,14 @@ def start_test():
     "-t",
     "/app/jmeter/testplans/basic_load_test.jmx",
 
-    "-Jusers=100",
-    "-Jrampup=10",
-    "-Jhost=localhost",
-    "-Jport=5000",
-    "-Jpath=/fast",
+    "-Jusers=" + users,
+    "-Jrampup=" + rampup,
+    "-Jloops=" + loops,
+
+    "-Jprotocol=" + protocol,
+    "-Jhost=" + host,
+    "-Jport=" + str(port),
+    "-Jpath=" + path,
 
     "-l",
     "/app/jmeter/results/results.jtl",
@@ -137,13 +178,30 @@ def start_test():
             "/app/jmeter/results/results.jtl"
         )
 
-        incidents = analyze_incident(results)
+        test_context = {
+            "path": path,
+            "users": users,
+            "rampup": rampup
+        }
+
+        incidents = analyze_incident(results, test_context)
+
+        system_metrics = get_system_metrics()
+
+        ai_analysis = generate_ai_analysis(
+            results,
+            incidents,
+            system_metrics,
+            test_context
+        )
 
         return {
             "status": "success",
             "message": "JMeter test completed",
             "results": results,
-            "incidents": incidents
+            "incidents": incidents,
+            "system_metrics": system_metrics,
+            "ai_analysis": ai_analysis
         }
 
     except subprocess.CalledProcessError as e:
@@ -152,6 +210,7 @@ def start_test():
             "status": "failure",
             "message": str(e)
         }, 500
+
 
 @app.route("/metrics")
 def metrics():

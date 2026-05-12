@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+.env
 
 # JMeter generated files
 jmeter/results/
