@@ -147,6 +147,22 @@ def start_test():
 
     timer = request.args.get("timer", "500")
 
+    journey_endpoints = request.args.get(
+    "journeyEndpoints",
+    ""
+    )
+
+    journey_list = [
+        endpoint.strip()
+        for endpoint in journey_endpoints.splitlines()
+        if endpoint.strip()
+    ]
+
+    path1 = journey_list[0] if len(journey_list) > 0 else path
+    path2 = journey_list[1] if len(journey_list) > 1 else path
+    path3 = journey_list[2] if len(journey_list) > 2 else path
+    path4 = journey_list[3] if len(journey_list) > 3 else path
+
     jmeter_command = [
     "jmeter",
     "-n",
@@ -161,7 +177,11 @@ def start_test():
     "-Jprotocol=" + protocol,
     "-Jhost=" + host,
     "-Jport=" + str(port),
-    "-Jpath=" + path,
+
+    "-Jpath1=" + path1,
+    "-Jpath2=" + path2,
+    "-Jpath3=" + path3,
+    "-Jpath4=" + path4,
 
     "-l",
     "/app/jmeter/results/results.jtl",
