@@ -53,6 +53,8 @@ Test Context:
 - Target Endpoint: {test_context['path']}
 - Virtual Users: {test_context['users']}
 - Ramp-Up: {test_context['rampup']} seconds
+- Loop Count: {test_context['loops']}
+- Think Time: {test_context['timer']} ms
 
 Detected Incidents:
 """

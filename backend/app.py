@@ -15,6 +15,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
+latest_test_result = {}
+
 REQUEST_COUNT = Counter(
     "app_requests_total",
     "Total App HTTP Requests",
@@ -103,6 +105,11 @@ def home():
     return render_template("index.html")
 
 
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
+
+
 @app.route("/start-test")
 def start_test():
 
@@ -138,6 +145,8 @@ def start_test():
 
     loops = request.args.get("loops", "5")
 
+    timer = request.args.get("timer", "500")
+
     jmeter_command = [
     "jmeter",
     "-n",
@@ -147,6 +156,7 @@ def start_test():
     "-Jusers=" + users,
     "-Jrampup=" + rampup,
     "-Jloops=" + loops,
+    "-Jtimer=" + timer,
 
     "-Jprotocol=" + protocol,
     "-Jhost=" + host,
@@ -181,7 +191,9 @@ def start_test():
         test_context = {
             "path": path,
             "users": users,
-            "rampup": rampup
+            "rampup": rampup,
+            "loops": loops,
+            "timer": timer
         }
 
         incidents = analyze_incident(results, test_context)
@@ -195,7 +207,9 @@ def start_test():
             test_context
         )
 
-        return {
+        global latest_test_result
+
+        latest_test_result = {
             "status": "success",
             "message": "JMeter test completed",
             "results": results,
@@ -204,6 +218,8 @@ def start_test():
             "ai_analysis": ai_analysis
         }
 
+        return latest_test_result
+
     except subprocess.CalledProcessError as e:
 
         return {
@@ -211,6 +227,10 @@ def start_test():
             "message": str(e)
         }, 500
 
+
+@app.route("/latest-result")
+def latest_result():
+    return latest_test_result
 
 @app.route("/metrics")
 def metrics():
