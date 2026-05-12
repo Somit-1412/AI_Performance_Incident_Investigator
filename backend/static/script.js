@@ -1,12 +1,12 @@
 async function startTest() {
 
-    const baseUrl =document.getElementById("baseUrl").value;
-    const path = document.getElementById("path").value;
-    const users = document.getElementById("users").value;
-    const rampup = document.getElementById("rampup").value;
-    const loops =   document.getElementById("loops").value;
+    const baseUrl =document.getElementById("baseUrl").value || "http://localhost:5000";
+    const path = document.getElementById("path").value || "/fast";
+    const users = document.getElementById("users").value || "50";
+    const rampup = document.getElementById("rampup").value || "5";
+    const loops =   document.getElementById("loops").value || "5";
     const timer =
-        document.getElementById("timer").value;
+        document.getElementById("timer").value || "500";
     const startButton = 
         document.getElementById("startButton");
 

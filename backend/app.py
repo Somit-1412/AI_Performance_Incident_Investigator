@@ -232,6 +232,10 @@ def start_test():
 def latest_result():
     return latest_test_result
 
+@app.route("/grafana")
+def grafana():
+    return render_template("grafana.html")
+
 @app.route("/metrics")
 def metrics():
     return Response(generate_latest(), mimetype="text/plain")

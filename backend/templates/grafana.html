@@ -8,7 +8,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Dashboard</title>
+    <title>Grafana Observability</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -42,7 +42,7 @@
                 Dashboard
             </a>
 
-            <a class="nav-link" href="/grafana">
+            <a class="nav-link active" href="/grafana">
                 Grafana
             </a>
 
@@ -59,24 +59,21 @@
 <div class="container py-5">
 
     <h1 class="mb-4">
-        Performance Dashboard
+        Grafana Observability Dashboard
     </h1>
 
-    <div id="dashboard-content">
+    <div class="card bg-secondary p-3">
 
-        <div class="alert alert-info">
-            Loading dashboard...
-        </div>
+        <iframe
+            src="http://localhost:3000/d/adrnz8s/result-dashboard?orgId=1&from=now-5m&to=now&timezone=browser&kiosk"
+            width="100%"
+            height="800"
+            frameborder="0"
+        ></iframe>
 
     </div>
 
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-<script
-    src="{{ url_for('static', filename='dashboard.js') }}"
-></script>
 
 </body>
 
