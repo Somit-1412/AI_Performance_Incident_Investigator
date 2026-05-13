@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, render_template
+from flask import Flask, Response, request, render_template, jsonify
 from prometheus_client import Counter, generate_latest, Histogram, Gauge
 import time
 import subprocess
@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 from ai_analyzer import generate_ai_analysis
 from prometheus_metrics import get_system_metrics
 from urllib.parse import urlparse
+import random
+import json
+from datetime import datetime
 
 load_dotenv()
 
@@ -177,7 +180,7 @@ def start_test():
         for endpoint in journey_endpoints.splitlines()
         if endpoint.strip()
     ]
-    
+
     if journey_list:
         path1 = journey_list[0] if len(journey_list) > 0 else "NONE"
         path2 = journey_list[1] if len(journey_list) > 1 else "NONE"
@@ -277,6 +280,19 @@ def start_test():
             "ai_analysis": ai_analysis
         }
 
+        timestamp = datetime.now().strftime(
+            "%Y%m%d_%H%M%S"
+        )
+
+        history_path = (
+            f"/app/test_history/test_{timestamp}.json"
+        )
+
+        os.makedirs("/app/test_history", exist_ok=True)
+
+        with open(history_path, "w") as file:
+            json.dump(latest_test_result, file, indent=4)
+
         return latest_test_result
 
     except subprocess.CalledProcessError as e:
@@ -298,6 +314,268 @@ def grafana():
 @app.route("/metrics")
 def metrics():
     return Response(generate_latest(), mimetype="text/plain")
+
+@app.route("/chaos/latency")
+def chaos_latency():
+
+    REQUEST_COUNT.labels(
+        method="GET",
+        endpoint="/chaos/latency"
+    ).inc()
+
+    with REQUEST_LATENCY.labels(
+        method="GET",
+        endpoint="/chaos/latency"
+    ).time():
+
+        delay = random.uniform(1, 5)
+
+        time.sleep(delay)
+
+        return {
+            "status": "success",
+            "delay_seconds": round(delay, 2),
+            "message": "Latency chaos injected"
+        }
+
+@app.route("/chaos/failure")
+def chaos_failure():
+
+    REQUEST_COUNT.labels(
+        method="GET",
+        endpoint="/chaos/failure"
+    ).inc()
+
+    failure_chance = random.random()
+
+    if failure_chance < 0.5:
+
+        ERROR_COUNT.labels(
+            method="GET",
+            endpoint="/chaos/failure"
+        ).inc()
+
+        return {
+            "status": "failure",
+            "message": "Injected random failure"
+        }, 500
+
+    return {
+        "status": "success",
+        "message": "Request succeeded"
+    }
+
+@app.route("/chaos/cpu")
+def chaos_cpu():
+
+    REQUEST_COUNT.labels(
+        method="GET",
+        endpoint="/chaos/cpu"
+    ).inc()
+
+    with REQUEST_LATENCY.labels(
+        method="GET",
+        endpoint="/chaos/cpu"
+    ).time():
+
+        total = 0
+
+        for i in range(20000000):
+            total += i * i
+
+        return {
+            "status": "success",
+            "message": "CPU chaos completed"
+        }
+
+@app.route("/chaos/memory")
+def chaos_memory():
+
+    REQUEST_COUNT.labels(
+        method="GET",
+        endpoint="/chaos/memory"
+    ).inc()
+
+    with REQUEST_LATENCY.labels(
+        method="GET",
+        endpoint="/chaos/memory"
+    ).time():
+
+        memory_hog = []
+
+        for _ in range(15):
+            memory_hog.append("A" * 10_000_000)
+
+        time.sleep(2)
+
+        return {
+            "status": "success",
+            "message": "Memory chaos injected"
+        }
+
+@app.route("/chaos")
+def chaos():
+    return render_template("chaos.html")
+
+@app.route("/history")
+def history():
+
+    history_dir = "/app/test_history"
+
+    os.makedirs(history_dir, exist_ok=True)
+
+    files = sorted(
+        os.listdir(history_dir),
+        reverse=True
+    )
+
+    history_data = []
+
+    for filename in files:
+
+        if filename.endswith(".json"):
+
+            filepath = os.path.join(
+                history_dir,
+                filename
+            )
+
+            with open(filepath, "r") as file:
+
+                data = json.load(file)
+
+                history_data.append({
+                    "file": filename,
+                    "results": data.get("results", {}),
+                    "incidents": data.get("incidents", []),
+                    "system_metrics": data.get(
+                        "system_metrics",
+                        {}
+                    )
+                })
+
+    return jsonify(history_data)
+
+@app.route("/history-dashboard")
+def history_dashboard():
+    return render_template("history.html")
+
+@app.route("/compare")
+def compare_tests():
+
+    history_dir = "/app/test_history"
+
+    files = sorted(
+        [
+            file for file in os.listdir(history_dir)
+            if file.endswith(".json")
+        ],
+        reverse=True
+    )
+
+    if len(files) < 2:
+
+        return {
+            "status": "failure",
+            "message": "At least two tests required"
+        }
+
+    latest_file = files[0]
+    previous_file = files[1]
+
+    with open(
+        os.path.join(history_dir, latest_file),
+        "r"
+    ) as file:
+
+        latest = json.load(file)
+
+    with open(
+        os.path.join(history_dir, previous_file),
+        "r"
+    ) as file:
+
+        previous = json.load(file)
+
+    latest_results = latest["results"]
+    previous_results = previous["results"]
+
+    comparison = {
+
+        "latest_test": latest_file,
+        "previous_test": previous_file,
+
+        "latency_change_percent":
+
+            round(
+                (
+                    (
+                        latest_results[
+                            "average_latency_ms"
+                        ]
+                        -
+                        previous_results[
+                            "average_latency_ms"
+                        ]
+                    )
+                    /
+                    previous_results[
+                        "average_latency_ms"
+                    ]
+                ) * 100,
+                2
+            ),
+
+        "throughput_change_percent":
+
+            round(
+                (
+                    (
+                        latest_results[
+                            "throughput_rps"
+                        ]
+                        -
+                        previous_results[
+                            "throughput_rps"
+                        ]
+                    )
+                    /
+                    previous_results[
+                        "throughput_rps"
+                    ]
+                ) * 100,
+                2
+            ),
+
+        "error_change_percent":
+
+            round(
+                (
+                    (
+                        latest_results[
+                            "error_percentage"
+                        ]
+                        -
+                        previous_results[
+                            "error_percentage"
+                        ]
+                    )
+                    /
+                    (
+                        previous_results[
+                            "error_percentage"
+                        ] or 1
+                    )
+                ) * 100,
+                2
+            )
+    }
+
+    return comparison
+
+@app.route("/compare-dashboard")
+def compare_dashboard():
+    return render_template("compare.html")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

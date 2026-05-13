@@ -22,3 +22,6 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# test history
+backend/test_history

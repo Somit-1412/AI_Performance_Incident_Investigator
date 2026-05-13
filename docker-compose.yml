@@ -42,6 +42,7 @@ services:
     volumes:
       - ./backend:/app
       - ./jmeter:/app/jmeter
+      - ./backend/test_history:/app/test_history
   
 volumes:
   grafana_data:
