@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Performance Trends</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body class="bg-dark text-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-black border-bottom border-secondary">
+
+    <div class="container">
+
+        <a class="navbar-brand" href="/">
+            AI Incident Investigator
+        </a>
+
+        <div class="navbar-nav">
+
+            <a class="nav-link" href="/">
+                Home
+            </a>
+
+            <a class="nav-link" href="/dashboard">
+                Dashboard
+            </a>
+
+            <a class="nav-link" href="/grafana">
+                Grafana
+            </a>
+
+            <a class="nav-link" href="/chaos">
+                Chaos Testing
+            </a>
+
+            <a class="nav-link" href="/history-dashboard">
+                History
+            </a>
+
+            <a class="nav-link" href="/compare-dashboard">
+                Compare
+            </a>
+
+            <a class="nav-link active" href="/trends-dashboard">
+                Trends
+            </a>
+
+        </div>
+
+    </div>
+
+</nav>
+
+<div class="container py-5">
+
+    <h1 class="mb-5">
+        Historical Performance Trends
+    </h1>
+
+    <div class="card bg-secondary mb-5">
+
+        <div class="card-body">
+
+            <h3 class="mb-4">
+                Average Latency Trend
+            </h3>
+
+            <canvas id="latencyChart"></canvas>
+
+        </div>
+
+    </div>
+
+    <div class="card bg-secondary mb-5">
+
+        <div class="card-body">
+
+            <h3 class="mb-4">
+                Throughput Trend
+            </h3>
+
+            <canvas id="throughputChart"></canvas>
+
+        </div>
+
+    </div>
+
+    <div class="card bg-secondary">
+
+        <div class="card-body">
+
+            <h3 class="mb-4">
+                Error Percentage Trend
+            </h3>
+
+            <canvas id="errorChart"></canvas>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+async function loadTrends() {
+
+    const response =
+        await fetch("/trends");
+
+    const data =
+        await response.json();
+
+    new Chart(
+
+        document.getElementById(
+            "latencyChart"
+        ),
+
+        {
+            type: "line",
+
+            data: {
+
+                labels: data.tests,
+
+                datasets: [{
+                    label: "Average Latency (ms)",
+                    data: data.latency,
+                    borderColor: "#ff4d4d",
+                    backgroundColor: "rgba(255,77,77,0.2)",
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    tension: 0.3
+                }]
+            },
+
+            options: {
+
+                responsive: true,
+
+                plugins: {
+
+                    legend: {
+
+                        labels: {
+                            color: "white"
+                        }
+                    }
+                },
+
+                scales: {
+
+                    x: {
+
+                        ticks: {
+                            color: "white"
+                        },
+
+                        grid: {
+                            color: "rgba(255,255,255,0.1)"
+                        }
+                    },
+
+                    y: {
+
+                        ticks: {
+                            color: "white"
+                        },
+
+                        grid: {
+                            color: "rgba(255,255,255,0.1)"
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+    new Chart(
+
+        document.getElementById(
+            "throughputChart"
+        ),
+
+        {
+            type: "line",
+
+            data: {
+
+                labels: data.tests,
+
+                datasets: [{
+                    label: "Throughput (req/sec)",
+                    data: data.throughput,
+                    borderColor: "#4dff88",
+                    backgroundColor: "rgba(77,255,136,0.2)",
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    tension: 0.3
+                }]
+            },
+
+            options: {
+
+                responsive: true,
+
+                plugins: {
+
+                    legend: {
+
+                        labels: {
+                            color: "white"
+                        }
+                    }
+                },
+
+                scales: {
+
+                    x: {
+
+                        ticks: {
+                            color: "white"
+                        },
+
+                        grid: {
+                            color: "rgba(255,255,255,0.1)"
+                        }
+                    },
+
+                    y: {
+
+                        ticks: {
+                            color: "white"
+                        },
+
+                        grid: {
+                            color: "rgba(255,255,255,0.1)"
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+    new Chart(
+
+        document.getElementById(
+            "errorChart"
+        ),
+
+        {
+            type: "line",
+
+            data: {
+
+                labels: data.tests,
+
+                datasets: [{
+                    label: "Error Percentage",
+                    data: data.error_rate,
+                    borderColor: "#ffd24d",
+                    backgroundColor: "rgba(255,210,77,0.2)",
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    tension: 0.3
+                }]
+            },
+
+            options: {
+
+                responsive: true,
+
+                plugins: {
+
+                    legend: {
+
+                        labels: {
+                            color: "white"
+                        }
+                    }
+                },
+
+                scales: {
+
+                    x: {
+
+                        ticks: {
+                            color: "white"
+                        },
+
+                        grid: {
+                            color: "rgba(255,255,255,0.1)"
+                        }
+                    },
+
+                    y: {
+
+                        ticks: {
+                            color: "white"
+                        },
+
+                        grid: {
+                            color: "rgba(255,255,255,0.1)"
+                        }
+                    }
+                }
+            }
+        }
+    );
+}
+
+loadTrends();
+
+</script>
+
+</body>
+
+</html>

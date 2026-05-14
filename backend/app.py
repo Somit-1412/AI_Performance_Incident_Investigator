@@ -7,18 +7,26 @@ import shutil
 from parser import parse_jmeter_results
 from incidents import analyze_incident
 from dotenv import load_dotenv
-from ai_analyzer import generate_ai_analysis
+from ai_analyzer import (
+    generate_ai_analysis,
+    generate_comparison_analysis
+)
 from prometheus_metrics import get_system_metrics
 from urllib.parse import urlparse
 import random
 import json
 from datetime import datetime
+import requests
+import threading
 
 load_dotenv()
 
 app = Flask(__name__)
 
 latest_test_result = {}
+
+latest_comparison_analysis = None
+latest_comparison_signature = None
 
 REQUEST_COUNT = Counter(
     "app_requests_total",
@@ -57,6 +65,26 @@ TEST_TOTAL_REQUESTS = Gauge(
     "load_test_total_requests",
     "Total requests in latest load test"
 )
+
+def trigger_chaos(chaos_types):
+
+    try:
+
+        for chaos_type in chaos_types:
+
+            if chaos_type:
+
+                for _ in range(20):
+
+                    requests.get(
+                        f"http://backend:5000/chaos/{chaos_type}"
+                    )
+
+    except Exception as error:
+
+        print(
+            f"Chaos injection failed: {error}"
+        )
 
 @app.route("/fast")
 def fast():
@@ -161,6 +189,16 @@ def start_test():
     "100"
     )
 
+    execution_mode = request.args.get(
+    "execution_mode",
+    "load_only"
+    )
+
+    chaos_types = request.args.get(
+    "chaos_types",
+    ""
+    ).split(",")
+
     rampup = request.args.get(
     "rampup",
     "10"
@@ -226,6 +264,24 @@ def start_test():
 
     if os.path.exists(results_file):
         os.remove(results_file)
+
+    if execution_mode == "chaos_only":
+
+        trigger_chaos(chaos_types)
+
+        return {
+            "status": "success",
+            "message": "Chaos injected successfully"
+        }
+
+    if execution_mode == "load_plus_chaos":
+
+        chaos_thread = threading.Thread(
+            target=trigger_chaos,
+            args=(chaos_types,)
+        )
+
+        chaos_thread.start()
 
     try:
         subprocess.run(jmeter_command, check=True)
@@ -571,11 +627,104 @@ def compare_tests():
             )
     }
 
+    signature = (
+        f"{latest_file}_{previous_file}"
+    )
+
+    global latest_comparison_analysis
+    global latest_comparison_signature
+
+    if signature != latest_comparison_signature:
+
+        latest_comparison_analysis = (
+            generate_comparison_analysis(
+                comparison
+            )
+        )
+
+        latest_comparison_signature = (
+            signature
+        )
+
+    comparison["ai_analysis"] = (
+        latest_comparison_analysis
+    )
+
     return comparison
 
 @app.route("/compare-dashboard")
 def compare_dashboard():
     return render_template("compare.html")
+
+@app.route("/trends")
+def trends():
+
+    history_dir = "/app/test_history"
+
+    os.makedirs(history_dir, exist_ok=True)
+
+    files = sorted(
+        [
+            file for file in os.listdir(history_dir)
+            if file.endswith(".json")
+        ]
+    )
+
+    trend_data = {
+
+        "tests": [],
+        "latency": [],
+        "throughput": [],
+        "error_rate": []
+
+    }
+
+    for filename in files:
+
+        filepath = os.path.join(
+            history_dir,
+            filename
+        )
+
+        with open(filepath, "r") as file:
+
+            data = json.load(file)
+
+            results = data.get(
+                "results",
+                {}
+            )
+
+            trend_data["tests"].append(
+                filename.replace(".json", "")
+            )
+
+            trend_data["latency"].append(
+                results.get(
+                    "average_latency_ms",
+                    0
+                )
+            )
+
+            trend_data["throughput"].append(
+                results.get(
+                    "throughput_rps",
+                    0
+                )
+            )
+
+            trend_data["error_rate"].append(
+                results.get(
+                    "error_percentage",
+                    0
+                )
+            )
+
+    return trend_data
+
+@app.route("/trends-dashboard")
+def trends_dashboard():
+    return render_template("trends.html")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

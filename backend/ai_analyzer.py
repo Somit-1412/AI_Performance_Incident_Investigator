@@ -116,3 +116,78 @@ def generate_ai_analysis(results, incidents, system_metrics, test_context):
     )
 
     return response.choices[0].message.content
+
+def generate_comparison_analysis(comparison):
+
+    prompt = f"""
+You are a performance engineering analyst.
+
+Analyze the following comparison results
+between two performance test executions.
+
+Comparison Metrics:
+
+- Latency Change:
+  {comparison['latency_change_percent']}%
+
+- Throughput Change:
+  {comparison['throughput_change_percent']}%
+
+- Error Rate Change:
+  {comparison['error_change_percent']}%
+
+Interpretation Rules:
+
+- Positive latency change means performance degradation.
+- Negative latency change means performance improvement.
+
+- Positive error rate change means worse stability.
+- Negative error rate change means improved stability.
+
+- Positive throughput change means better capacity.
+- Negative throughput change means degraded capacity.
+
+Rules:
+
+- If latency change is positive,
+  explicitly state latency degradation.
+
+- If error rate change is negative,
+  explicitly state stability improvement.
+
+- Do not contradict metric semantics.
+
+- Do not claim overall improvement
+  if latency degradation is significant.
+
+- Base conclusions strictly on metric signs.
+  
+Explain:
+
+1. Whether performance improved or degraded
+2. Whether system stability improved or degraded
+3. Possible operational impact
+
+Keep analysis concise and evidence-based.
+"""
+
+    response = client.chat.completions.create(
+
+        model="llama-3.1-8b-instant",
+
+        messages=[
+            {
+                "role": "system",
+                "content":
+                "You are an expert performance engineer."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+
+        temperature=0.3
+    )
+
+    return response.choices[0].message.content

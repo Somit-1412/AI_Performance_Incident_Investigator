@@ -9,6 +9,43 @@ async function startTest() {
     const loops =   document.getElementById("loops").value || "5";
     const timer =
         document.getElementById("timer").value || "500";
+    const executionMode =
+        document.getElementById(
+            "execution_mode"
+        ).value;
+    const chaosTypes = [];
+
+        if (
+            document.getElementById(
+                "chaos_latency"
+            ).checked
+        ) {
+            chaosTypes.push("latency");
+        }
+
+        if (
+            document.getElementById(
+                "chaos_failure"
+            ).checked
+        ) {
+            chaosTypes.push("failure");
+        }
+
+        if (
+            document.getElementById(
+                "chaos_cpu"
+            ).checked
+        ) {
+            chaosTypes.push("cpu");
+        }
+
+        if (
+            document.getElementById(
+                "chaos_memory"
+            ).checked
+        ) {
+            chaosTypes.push("memory");
+        }
     const startButton = 
         document.getElementById("startButton");
 
@@ -19,7 +56,7 @@ async function startTest() {
             "Running Test...";
 
         const response = await fetch(
-            `http://localhost:5000/start-test?baseUrl=${encodeURIComponent(baseUrl)}&path=${encodeURIComponent(path)}&users=${users}&rampup=${rampup}&loops=${loops}&timer=${timer}&journeyEndpoints=${encodeURIComponent(journeyEndpoints)}`
+            `http://localhost:5000/start-test?baseUrl=${encodeURIComponent(baseUrl)}&path=${encodeURIComponent(path)}&users=${users}&rampup=${rampup}&loops=${loops}&timer=${timer}&journeyEndpoints=${encodeURIComponent(journeyEndpoints)}&execution_mode=${executionMode}&chaos_types=${chaosTypes.join(",")}`
         );
 
         await response.json();
